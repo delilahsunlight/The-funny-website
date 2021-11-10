@@ -2,6 +2,7 @@
 import { imageLoader } from './imageLoader';
 import { Achievement } from './interfaces'
 import { RANKS } from './constants'
+import { clamp } from 'lodash';
 
 class AchievementComponent {
     private _on = false;
@@ -122,7 +123,7 @@ export class AchievementComponents {
 
         back.addEventListener('click', () => backCb());
         generateLink.addEventListener('click', () => {
-            const name = prompt('Name');
+            const name = prompt('Name (optional)');
             const builder: string[] = [];
             for (const ach of this.achievements) {
                 if (ach.achieved) {
@@ -137,7 +138,26 @@ export class AchievementComponents {
             params.set('d', JSON.stringify(builder));
             params.set('i', identifier);
             const url = `${location.origin}?${params.toString()}`;
-            window.open(url, '_blank');
+
+            const result = writeClipboardHack(url);
+            if (result) {
+                generateLink.textContent = "Copied to clipboard"
+                setTimeout(() => {
+                    generateLink.textContent = "Get link"
+                }, 5000);
+            } else {
+                generateLink.textContent = "Opening in new tab in 3"
+                setTimeout(() => {
+                    generateLink.textContent = "Opening in new tab in 2"
+                    setTimeout(() => {
+                        generateLink.textContent = "Opening in new tab in 1"
+                        setTimeout(() => {
+                            window.open(url, '_blank');
+                        }, 1000)
+                    }, 1000);
+                }, 1000);
+
+            }
         })
 
         this.component.classList.add('achievements');
@@ -170,8 +190,7 @@ export class AchievementComponents {
     update = () => {
         const percent = this.score / this.totalScore;
         const index = Math.floor(RANKS.length * percent);
-
-        this.scoreDisplay.setRank(RANKS[index]);
+        this.scoreDisplay.setRank(RANKS[clamp(index, 0, RANKS.length - 1)]);
         this.scoreDisplay.setScore(this.score.toString());
         this.scoreDisplay.setSelected(this.selected.toString());
         this.scoreDisplay.setProgress(percent);
@@ -275,3 +294,17 @@ export class KeyValueNode {
     }
 }
 
+export function writeClipboardHack(text: string) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-999px';
+    el.style.bottom = '-999px';
+    document.body.appendChild(el);
+    el.select();
+    el.setSelectionRange(0, text.length);
+    const result = document.execCommand('copy');
+    document.body.removeChild(el);
+    return result;
+}

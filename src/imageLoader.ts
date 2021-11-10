@@ -58,6 +58,5 @@ function loadImageAsset(asset: Asset): Promise<HTMLImageElement> {
         image.addEventListener('load', () => resolve(image));
         image.addEventListener('error', reject);
         image.src = `data:image/${asset.ex};base64,${asset.data}`;
-
     });
 }
