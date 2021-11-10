@@ -15,11 +15,11 @@ const words = [
 
 ];
 const sentences = [
-    'Select your gender and get your hands dirty',
+    'Select your gender and get your hands dirty.',
     'Select your gender and express your liquid dispatching',
     'Select your symbol and start the adventure.',
     'Select your button and check your todo list',
-    'You might\'ve not completed all the achievement. Click the gender button to start your adventure ',
+    'You might\'ve not completed all the achievement. Click the gender button to start your adventure.',
 
 ]
 
