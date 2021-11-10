@@ -157,7 +157,7 @@ export class AchievementComponents {
             list.appendChild(ach.component);
             ach.onChange = this.update;
         }
-        this.scoreDisplay = new ScoreDisplay(this.score.toString(), '0', this.totalScore.toString(), RANKS[0], lock ? params.get('n') : undefined);
+        this.scoreDisplay = new ScoreDisplay(this.score.toString(), '0', this.achievements.length.toString(), RANKS[0], lock ? params.get('n') : undefined);
 
         this.component.appendChild(h);
         this.component.appendChild(buttonsDiv);
@@ -173,7 +173,7 @@ export class AchievementComponents {
 
         this.scoreDisplay.setRank(RANKS[index]);
         this.scoreDisplay.setScore(this.score.toString());
-        this.scoreDisplay.setSelected(this.score.toString());
+        this.scoreDisplay.setSelected(this.selected.toString());
         this.scoreDisplay.setProgress(percent);
 
     }
@@ -224,7 +224,7 @@ export class ScoreDisplay {
         const authorNode = new KeyValueNode('', author);
         this.score = new KeyValueNode('Your fap score is:', score);
         this.selected = new KeyValueNode('Selected:', `${selected}/${totalScore}`);
-        this.rank = new KeyValueNode('Selected:', rank);
+        this.rank = new KeyValueNode('Rank:', rank);
         this.scrollbarOuter.appendChild(this.scrollbarInner);
         this.scrollbarOuter.classList.add('score-progress-outer');
         this.scrollbarInner.classList.add('score-progress-inner');
