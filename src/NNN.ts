@@ -2,6 +2,7 @@ import * as moment from 'moment';
 
 export class NNNTimer {
     private div = document.createElement('div');
+    private container = document.createElement('container');
     private h = document.createElement('h5');
     private span = document.createElement('span');
     private dec = moment(`${(new Date()).getFullYear()}-12-1`);
@@ -9,10 +10,29 @@ export class NNNTimer {
 
     constructor() {
         this.h.textContent = 'No Nut November Timer'
-        this.div.appendChild(this.h);
-        this.div.appendChild(this.span);
+        this.container.appendChild(this.h);
+        this.container.appendChild(this.span);
+        this.div.appendChild(this.container);
         this.div.classList.add("NNN");
         this.update();
+
+        this.div.addEventListener('fullscreenchange', () => {
+            const bounds = this.div.getBoundingClientRect()
+            if (bounds.left !== 0) {
+                this.div.style.fontSize = '';
+                this.container.style.top = '';
+                this.container.style.position = ``;
+            } 
+        })
+        this.div.addEventListener('click', async () => {
+            await this.div.requestFullscreen();
+            const bounds = this.div.getBoundingClientRect()
+            if (bounds.left === 0) {
+                this.div.style.fontSize = '9vw';
+                this.container.style.top = '30%';
+                this.container.style.position = `relative`;
+            } 
+        });
     }
     start() {
         this.stop();
