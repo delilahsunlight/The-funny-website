@@ -3,6 +3,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -20,9 +21,15 @@ const config = {
         new HtmlWebpackPlugin({
             template: 'index.html',
         }),
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
+            Buffer: ['buffer', 'Buffer'],
+        }),
+        new webpack.DefinePlugin({
+            DEV: !isProduction,
+            VERSION: require('./package.json').version,
+        }),
 
-    // Add your plugins here
-    // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
     module: {
         rules: [
@@ -31,13 +38,6 @@ const config = {
                 loader: 'ts-loader',
                 exclude: ['/node_modules/'],
             },
-            {
-                test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
-                type: 'asset',
-            },
-
-            // Add your rules for custom modules here
-            // Learn more about loaders from https://webpack.js.org/loaders/
         ],
     },
     optimization: {
@@ -58,6 +58,11 @@ const config = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
+        alias: {
+            process: 'process/browser',
+            stream: "stream-browserify",
+            zlib: "browserify-zlib"
+        }
     },
 };
 
