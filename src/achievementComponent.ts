@@ -82,7 +82,7 @@ export class AchievementComponents {
 
         let lock = false;
 
-        let achievementQuery: string[] =  payload ? payload.achievements : []
+        let achievementQuery: string[] = payload ? payload.achievements : []
         if (achievementQuery.length) {
             lock = true;
         }
@@ -120,13 +120,13 @@ export class AchievementComponents {
                     builder.push(ach.achievement.uniqueId);
                 }
             }
-            
-            const buffer = builder.join(';');
-            const string = `${buffer}:${identifier}${name ? `:${name}` :''}`;
-            const queryData = await compressString(string);
-            console.log(queryData)
 
-            const url = `${location.origin}?d=${queryData}`;
+            const buffer = builder.join(';');
+            const string = `${buffer}:${identifier}${name ? `:${name}` : ''}`;
+            const queryData = await compressString(string);
+            
+            const url = `${window.location.href.split('?')[0]}?d=${queryData}`;
+            console.log(`Generated url: ${url}`)
 
             const result = writeClipboardHack(url);
             if (result) {
@@ -155,7 +155,7 @@ export class AchievementComponents {
                         await holdOn(1000);
                         generateLink.textContent = "Unable to open in current tab";
                         try {
-                            const blob = new Blob([url], {type: 'text/plain;charset=utf-8;'});
+                            const blob = new Blob([url], { type: 'text/plain;charset=utf-8;' });
                             saveAs(blob, `${document.title}.txt`);
                         } catch (error) {
                             alert(url);
@@ -320,14 +320,14 @@ export function writeClipboardHack(text: string) {
 
 function holdOn(time: number) {
     return new Promise(resolve => setTimeout(resolve, time))
-} 
+}
 
 async function compressString(payload: string) {
     try {
         const result = await compress.gzip(payload)
         const sample1 = encodeURI(payload);
         const sample2 = encodeURI(result);
-        return sample1.length < sample2.length ? sample1 : sample2;  
+        return sample1.length < sample2.length ? sample1 : sample2;
     } catch (error) {
         return encodeURI(payload);
     }
@@ -351,17 +351,19 @@ export async function decodePayload(): Promise<QueryPayload | undefined> {
     try {
         const result = await compress.gunzip(data)
         const decoded = decodeStringPayload(result);
-        return decoded; 
+        return decoded;
     } catch (error) {
-        console.error(error);
+        if(DEV) {
+            console.error(error);
+        }
         const decoded = decodeStringPayload(data);
-        return decoded; 
+        return decoded;
     }
 }
 
 function decodeStringPayload(data: string): QueryPayload {
     const [stringData, type, name] = data.split(':');
-    const achievements = stringData.split(';');    
+    const achievements = stringData.split(';');
     return {
         achievements,
         type,
@@ -370,10 +372,10 @@ function decodeStringPayload(data: string): QueryPayload {
 
 }
 // URLSearchParams is giving us weird spaces in urls this should fix 
-// for what we are doing
 function getCustomQueryData() {
-    const search = location.search; 
-    const questionMarkIndex = search.indexOf('?'); 
+// for what we are doing
+    const search = location.search;
+    const questionMarkIndex = search.indexOf('?');
     const actualSearch = search.slice(questionMarkIndex + 1);
     if (actualSearch.startsWith('d=')) {
         return actualSearch.slice(2)
