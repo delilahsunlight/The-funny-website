@@ -131,6 +131,7 @@ export class AchievementComponents {
             const result = writeClipboardHack(url);
             if (result) {
                 generateLink.textContent = "Copied to clipboard"
+                alert(`Link has been copied to clipboard!\n${url}`)
                 setTimeout(() => {
                     generateLink.textContent = "Get link"
                 }, 5000);
