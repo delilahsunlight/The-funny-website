@@ -140,7 +140,7 @@ const ACHIEVEMENTS_BOTH: Achievement[] = [
     {
         icon: assets[29],
         title: "Iron Will",
-        description: "Do not fap for 30 days.",
+        description: "Do not fap for 30 days. (Childhood does not count!)",
         score: 52,
         uniqueId: "t",
     },
