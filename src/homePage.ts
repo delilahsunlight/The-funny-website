@@ -3,7 +3,7 @@ import { imageLoader } from './imageLoader';
 import { sample } from 'lodash';
 
 const words = [
-    'waking',
+    'wanking',
     'fapping',
     'masturbation',
     'soup making',

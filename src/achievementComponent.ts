@@ -1,8 +1,10 @@
 
 import { imageLoader } from './imageLoader';
-import { Achievement } from './interfaces'
+import { Achievement, QueryPayload } from './interfaces'
 import { RANKS } from './constants'
+import { bindToWindow, unbindToWindow } from './utils'
 import { clamp } from 'lodash';
+import * as compress from 'compress-str';
 
 class AchievementComponent {
     private _on = false;
@@ -37,7 +39,6 @@ class AchievementComponent {
         if (locked) {
             this.container.classList.add('locked');
         }
-
     };
 
     onChange() { };
@@ -74,27 +75,16 @@ export class AchievementComponents {
     private achievements: AchievementComponent[] = [];
     private component = document.createElement('div');
     private scoreDisplay: ScoreDisplay;
-    constructor(achievements: Achievement[], title: string, identifier: string, backCb: () => void) {
+    constructor(achievements: Achievement[], title: string, identifier: string, backCb: () => void, payload?: QueryPayload) {
         const h = document.createElement('h1');
         const list = document.createElement('div');
         h.textContent = title;
 
         let lock = false;
 
-        const params = new URLSearchParams(location.search);
-        let achievementQuery: string[] = []
-        if (params.has('d') && params.get('i') === identifier) {
+        let achievementQuery: string[] =  payload ? payload.achievements : []
+        if (achievementQuery.length) {
             lock = true;
-            try {
-                const data = JSON.parse(params.get('d'));
-                if (Array.isArray(data)) {
-                    achievementQuery = data;
-                } else {
-                    throw new Error("Not an array");
-                }
-            } catch (error) {
-                alert("Unable to parse data");
-            }
         }
 
 
@@ -122,22 +112,21 @@ export class AchievementComponents {
         }
 
         back.addEventListener('click', () => backCb());
-        generateLink.addEventListener('click', () => {
+        generateLink.addEventListener('click', async () => {
             const name = prompt('Name (optional)');
             const builder: string[] = [];
             for (const ach of this.achievements) {
                 if (ach.achieved) {
-                    builder.push(ach.achievement.title);
+                    builder.push(ach.achievement.uniqueId);
                 }
             }
+            
+            const buffer = builder.join(';');
+            const string = `${buffer}:${identifier}${name ? `:${name}` :''}`;
+            const queryData = await compressString(string);
+            console.log(queryData)
 
-            const params = new URLSearchParams(location.search);
-            if (name) {
-                params.set('n', name);
-            }
-            params.set('d', JSON.stringify(builder));
-            params.set('i', identifier);
-            const url = `${location.origin}?${params.toString()}`;
+            const url = `${location.origin}?d=${queryData}`;
 
             const result = writeClipboardHack(url);
             if (result) {
@@ -146,17 +135,36 @@ export class AchievementComponents {
                     generateLink.textContent = "Get link"
                 }, 5000);
             } else {
-                generateLink.textContent = "Opening in new tab in 3"
-                setTimeout(() => {
-                    generateLink.textContent = "Opening in new tab in 2"
-                    setTimeout(() => {
-                        generateLink.textContent = "Opening in new tab in 1"
-                        setTimeout(() => {
-                            window.open(url, '_blank');
-                        }, 1000)
-                    }, 1000);
-                }, 1000);
-
+                generateLink.textContent = "Opening in new tab in 3";
+                await holdOn(1000);
+                generateLink.textContent = "Opening in new tab in 2";
+                await holdOn(1000);
+                generateLink.textContent = "Opening in new tab in 1";
+                holdOn(1000);
+                try {
+                    window.open(url, '_blank');
+                } catch (error) {
+                    generateLink.textContent = "Unable to open new tab";
+                    await holdOn(1000);
+                    generateLink.textContent = "Opening in current tab";
+                    await holdOn(1000);
+                    try {
+                        window.open(url);
+                        window.open(url);
+                    } catch (error) {
+                        await holdOn(1000);
+                        generateLink.textContent = "Unable to open in current tab";
+                        try {
+                            const blob = new Blob([url], {type: 'text/plain;charset=utf-8;'});
+                            saveAs(blob, `${document.title}.txt`);
+                        } catch (error) {
+                            alert(url);
+                        }
+                    }
+                }
+                holdOn(5000);
+                console.log(url);
+                generateLink.textContent = "Get link";
             }
         })
 
@@ -167,7 +175,7 @@ export class AchievementComponents {
         for (const achievement of achs) {
             const ach = new AchievementComponent(achievement, lock);
             if (lock) {
-                if (achievementQuery.includes(achievement.title)) {
+                if (achievementQuery.includes(achievement.uniqueId)) {
                     ach.setValue(true);
                 }
                 ach.setValue = () => { };
@@ -177,7 +185,7 @@ export class AchievementComponents {
             list.appendChild(ach.component);
             ach.onChange = this.update;
         }
-        this.scoreDisplay = new ScoreDisplay(this.score.toString(), '0', this.achievements.length.toString(), RANKS[0], lock ? params.get('n') : undefined);
+        this.scoreDisplay = new ScoreDisplay(this.score.toString(), '0', this.achievements.length.toString(), RANKS[0], lock ? payload.name : undefined);
 
         this.component.appendChild(h);
         this.component.appendChild(buttonsDiv);
@@ -199,11 +207,13 @@ export class AchievementComponents {
     append(div: HTMLElement) {
         this.remove();
         div.appendChild(this.component);
+        bindToWindow('achievementsComponent', this);
     }
     remove() {
         if (this.component.parentElement) {
             this.component.parentElement.removeChild(this.component);
         }
+        unbindToWindow('achievementsComponent');
     }
 
     get totalScore() {
@@ -230,7 +240,6 @@ export class AchievementComponents {
         return selected;
     }
 }
-
 
 export class ScoreDisplay {
     private container = document.createElement('div');
@@ -307,4 +316,67 @@ export function writeClipboardHack(text: string) {
     const result = document.execCommand('copy');
     document.body.removeChild(el);
     return result;
+}
+
+function holdOn(time: number) {
+    return new Promise(resolve => setTimeout(resolve, time))
+} 
+
+async function compressString(payload: string) {
+    try {
+        const result = await compress.gzip(payload)
+        const sample1 = encodeURI(payload);
+        const sample2 = encodeURI(result);
+        return sample1.length < sample2.length ? sample1 : sample2;  
+    } catch (error) {
+        return encodeURI(payload);
+    }
+}
+
+export async function decodePayload(): Promise<QueryPayload | undefined> {
+    if (!location.search) {
+        return undefined;
+    }
+    const raw = getCustomQueryData();
+    if (!raw) {
+        location.href = location.origin;
+        return undefined;
+    }
+    const data = decodeURI(raw);
+    if (!data) {
+        location.href = location.origin;
+        return undefined;
+    }
+
+    try {
+        const result = await compress.gunzip(data)
+        const decoded = decodeStringPayload(result);
+        return decoded; 
+    } catch (error) {
+        console.error(error);
+        const decoded = decodeStringPayload(data);
+        return decoded; 
+    }
+}
+
+function decodeStringPayload(data: string): QueryPayload {
+    const [stringData, type, name] = data.split(':');
+    const achievements = stringData.split(';');    
+    return {
+        achievements,
+        type,
+        name,
+    }
+
+}
+// URLSearchParams is giving us weird spaces in urls this should fix 
+// for what we are doing
+function getCustomQueryData() {
+    const search = location.search; 
+    const questionMarkIndex = search.indexOf('?'); 
+    const actualSearch = search.slice(questionMarkIndex + 1);
+    if (actualSearch.startsWith('d=')) {
+        return actualSearch.slice(2)
+    }
+    return undefined;
 }

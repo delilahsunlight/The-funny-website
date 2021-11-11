@@ -5,4 +5,11 @@ export interface Achievement {
     title: string,
     description: string,
     score: number,
+    uniqueId: string;
+}
+
+export interface QueryPayload {
+    achievements: string[];
+    name?: string;
+    type: string;
 }

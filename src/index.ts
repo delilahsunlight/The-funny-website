@@ -1,6 +1,8 @@
+/// <reference path="fix.d.ts" />
+
 import { ACHIEVEMENTS_MALE, ACHIEVEMENTS_FEMALE } from './constants';
 import { homePage } from './homePage';
-import { AchievementComponents } from './achievementComponent';
+import { AchievementComponents, decodePayload } from './achievementComponent';
 import { NNNTimer } from './NNN';
 import { Asset, assets } from './assets';
 import { imageLoader } from './imageLoader';
@@ -36,18 +38,19 @@ import { saveAs } from 'file-saver';
     const loadRandom = await imageLoader(a);
     link.href = loadRandom.src;
 
+    const data = await decodePayload()
 
 
-    const male = new AchievementComponents(ACHIEVEMENTS_MALE, "Male achievements", "m", onBack);
-    const female = new AchievementComponents(ACHIEVEMENTS_FEMALE, "Female achievements", "f", onBack);
-    const params = new URLSearchParams(location.search);
-    const identifier = params.get('i');
-    if (identifier === "m") {
-        male.append(document.body);
-        return;
-    } else if (identifier === "f") {
-        female.append(document.body);
-        return;
+    const male = new AchievementComponents(ACHIEVEMENTS_MALE, "Male achievements", "m", onBack, data);
+    const female = new AchievementComponents(ACHIEVEMENTS_FEMALE, "Female achievements", "f", onBack, data);
+    if (data) {
+        if (data.type === "m") {
+            male.append(document.body);
+            return;
+        } else if (data.type === "f") {
+            female.append(document.body);
+            return;
+        }
     }
 
     const nnn = new NNNTimer();
