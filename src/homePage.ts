@@ -11,7 +11,7 @@ const words = [
     'jerk off',
     'manual override',
     'self abuse',
-    'wite liquid dispatcher',
+    'white liquid dispatcher',
 
 ];
 const sentences = [
